@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
+
+require 'cloud_files'
+require 'cloud_files/cli'
+require 'cloud_files/commands'
+
+require 'optparse'
+
+CloudFiles::CLI.new(ARGV).run
