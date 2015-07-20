@@ -9,6 +9,10 @@ module CloudFiles
       exists? ? connection.directories.get(name) : nil
     end
 
+    def create_container(name)
+      exists? ? connection.directories.create(:key => name).present? : nil
+    end
+
     def exists?
       credentials.exists? && connection.present?
     end

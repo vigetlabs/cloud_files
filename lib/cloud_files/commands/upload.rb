@@ -11,10 +11,26 @@ module CloudFiles
         provided_arguments.merge!(:container => @arguments.pop)
         provided_arguments.merge!(:files     => @arguments)
 
-        validate && upload_files && puts(stats.inspect)
+        validate && create_container && upload_files && puts(stats.inspect)
       end
 
       private
+
+      def options
+        @options ||= {:create => false}
+      end
+
+      def create_container?
+        options[:create] == true
+      end
+
+      def parser
+        super do |parser|
+          parser.on('-c', '--create', "Create container if it doesn't exist") do
+            options[:create] = true
+          end
+        end
+      end
 
       def stats
         @stats ||= {:success => 0, :failure => 0}
@@ -39,7 +55,7 @@ module CloudFiles
         elsif !container.alias_exists?
           display_error_message("alias '#{container.alias_name}' does not exist. Run `cf configure #{container.alias_name}` to add")
           false
-        elsif !container.exists?
+        elsif !container.exists? && !create_container?
           display_error_message("container '#{container.name}' does not exist for alias '#{container.alias_name}'")
           false
         else
@@ -55,8 +71,21 @@ module CloudFiles
         @files ||= CloudFiles::FileCollection.new(provided_arguments[:files])
       end
 
+      def create_container
+        if !container.exists? && create_container?
+          print "Creating container '#{container.name}' ... "
+          if container.create
+            puts 'done'
+          else
+            puts 'failed'
+            return false
+          end
+        end
+        true
+      end
+
       def upload_files
-        puts "Uploading files to '#{provided_arguments[:container]}':"
+        puts "Uploading files to '#{container.name}':"
 
         files.each do |file|
           print " * Sending '#{file.to_s}' ... "

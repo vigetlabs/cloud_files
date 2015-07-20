@@ -102,7 +102,7 @@ RSpec.describe CloudFiles::Container do
     end
 
     it "is true if the container exists" do
-      container = double()
+      container = double(:container)
 
       instance = double(:exists? => true).tap do |instance|
         allow(instance).to receive(:find_container).with('existing-container').and_return(container)
@@ -151,6 +151,41 @@ RSpec.describe CloudFiles::Container do
     it "returns false when not successful" do
       pending "Determine what success / failure means for uploading files (e.g. remote content_length != local content_length?)"
       fail
+    end
+  end
+
+  describe "#create" do
+    it "creates the container" do
+      instance = double(:exists? => true).tap do |instance|
+        expect(instance).to receive(:create_container).with('new-container').and_return(true)
+      end
+
+      allow(CloudFiles::Instance).to receive(:new).with('alias').and_return(instance)
+
+      subject = described_class.new('alias/new-container')
+      subject.create
+    end
+
+    it "returns true when succcessful" do
+      instance = double(:exists? => true).tap do |instance|
+        allow(instance).to receive(:create_container).with('new-container').and_return(true)
+      end
+
+      allow(CloudFiles::Instance).to receive(:new).with('alias').and_return(instance)
+
+      subject = described_class.new('alias/new-container')
+      expect(subject.create).to be(true)
+    end
+
+    it "returns false when unsuccessful" do
+      instance = double(:exists? => true).tap do |instance|
+        allow(instance).to receive(:create_container).with('new-container').and_return(false)
+      end
+
+      allow(CloudFiles::Instance).to receive(:new).with('alias').and_return(instance)
+
+      subject = described_class.new('alias/new-container')
+      expect(subject.create).to be(false)
     end
   end
 

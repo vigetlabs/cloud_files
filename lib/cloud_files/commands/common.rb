@@ -18,7 +18,6 @@ module CloudFiles
 
       def initialize(arguments)
         @arguments = arguments
-        @options   = {}
       end
 
       private
@@ -37,6 +36,8 @@ module CloudFiles
 
           parser.separator ""
           parser.separator "Available Options:"
+
+          yield(parser) if block_given?
 
           parser.on_tail('--help', 'Show help information') do
             puts parser

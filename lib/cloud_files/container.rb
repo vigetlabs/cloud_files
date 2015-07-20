@@ -28,6 +28,10 @@ module CloudFiles
       file.readable? && container.files.create(:key => file.to_s, :body => file.read).present?
     end
 
+    def create
+      instance.create_container(name)
+    end
+
     private
 
     def instance
