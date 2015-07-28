@@ -1,6 +1,5 @@
 module CloudFiles
   class CLI
-    COMMANDS = [:configure, :upload]
 
     def initialize(args)
       @args = args
