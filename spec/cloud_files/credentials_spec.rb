@@ -30,25 +30,6 @@ RSpec.describe CloudFiles::Credentials do
     end
   end
 
-  describe ".store" do
-    it "saves the specified credentials" do
-      described_class.store('alias', {
-        :username => 'username',
-        :api_key  => 'api_key',
-        :region   => 'region'
-      })
-
-      storage = YAML::Store.new(credentials_dir)
-      attributes = storage.transaction { storage['alias'] }
-
-      expect(attributes).to eq({
-        'username' => 'username',
-        'api_key'  => 'api_key',
-        'region'   => 'region'
-      })
-    end
-  end
-
   describe "configured attributes" do
     it "returns nil when there is no configuration for the specified key" do
       subject = described_class.new('key')
@@ -78,6 +59,30 @@ RSpec.describe CloudFiles::Credentials do
       end
 
       subject = described_class.new('key')
+
+      expect(subject.username).to eq('username')
+      expect(subject.api_key).to  eq('api_key')
+      expect(subject.region).to   eq('region')
+    end
+  end
+
+  describe "#attributes=" do
+    subject { described_class.new('alias') }
+
+    it "does nothing when given an empty hash" do
+      subject.attributes = {}
+
+      expect(subject.username).to be_nil
+      expect(subject.api_key).to  be_nil
+      expect(subject.region).to   be_nil
+    end
+
+    it "raises an exception when given an invalid attribute" do
+      expect { subject.attributes = {:bogon => true} }.to raise_error(NoMethodError)
+    end
+
+    it "sets the attributes" do
+      subject.attributes = {:username => 'username', :api_key => 'api_key', :region => 'region'}
 
       expect(subject.username).to eq('username')
       expect(subject.api_key).to  eq('api_key')
@@ -128,6 +133,40 @@ RSpec.describe CloudFiles::Credentials do
     end
   end
 
+  describe "#delete" do
+    it "does nothing if the credentials file doesn't exist" do
+      subject = described_class.new('alias')
+      subject.delete
+    end
+
+    context "with an existing file" do
+      let(:storage) do
+        FileUtils.mkdir(config_dir)
+        YAML::Store.new(credentials_dir)
+      end
+
+      before do
+        storage.transaction { storage['other'] = {'key' => 'value'} }
+      end
+
+      it "does nothing if the key doesn't exist" do
+        subject = described_class.new('alias')
+        expect { subject.delete }.to_not change { File.read(credentials_dir) }
+      end
+
+      it "removes the key from the credentials file" do
+        original_contents = File.read(credentials_dir)
+
+        storage.transaction { storage['alias'] = {'other_key' => 'other_value'} }
+
+        updated_contents = File.read(credentials_dir)
+
+        subject = described_class.new('alias')
+        expect { subject.delete }.to change { File.read(credentials_dir) }.from(updated_contents).to(original_contents)
+      end
+    end
+  end
+
   describe "#exists?" do
     it "is false if the key doesn't exist" do
       subject = described_class.new('alias')
@@ -135,7 +174,8 @@ RSpec.describe CloudFiles::Credentials do
     end
 
     it "is true if the key exists" do
-      described_class.store('alias', {:username => 'u', :api_key => 'a', :region => 'r'})
+      credentials = described_class.new('alias', {:username => 'u', :api_key => 'a', :region => 'r'})
+      credentials.save
 
       subject = described_class.new('alias')
       expect(subject.exists?).to be(true)

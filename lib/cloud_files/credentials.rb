@@ -12,10 +12,6 @@ module CloudFiles
       @root_path || ENV['HOME']
     end
 
-    def self.store(key, attributes = {})
-      new(key, attributes).save
-    end
-
     def self.directory
       Pathname.new(root_path).join('.cloud_files').tap do |path|
         path.mkdir unless path.exist?
@@ -28,6 +24,10 @@ module CloudFiles
 
     def initialize(key, attributes = {})
       @key = key
+      self.attributes = attributes
+    end
+
+    def attributes=(attributes)
       attributes.map {|k, v| send("#{k}=", v) }
     end
 
@@ -45,6 +45,10 @@ module CloudFiles
 
     def region
       @region ||= read['region']
+    end
+
+    def delete
+      storage.transaction { storage.delete(@key) }
     end
 
     def save

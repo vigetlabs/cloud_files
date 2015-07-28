@@ -27,6 +27,10 @@ module CloudFiles
         "Usage: cf #{self.class.name} #{argument_spec} [options]".squeeze(' ')
       end
 
+      def options
+        @options ||= {}
+      end
+
       def parser
         @parser ||= OptionParser.new do |parser|
           parser.banner = usage

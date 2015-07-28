@@ -9,13 +9,33 @@ module CloudFiles
         parser.parse!(@arguments)
         provided_arguments
 
-        validate && store_credentials
+        validate && update_credentials
       end
 
       private
 
+      def delete?
+        options.fetch(:delete, false)
+      end
+
+      def update_credentials
+        delete? ? delete_credentials : store_credentials
+      end
+
+      def parser
+        super do |parser|
+          parser.on('-d', '--delete', 'Delete the specfied alias from the credentials file') do
+            options.merge!(:delete => true)
+          end
+        end
+      end
+
       def required_arguments
         [:alias]
+      end
+
+      def delete_credentials
+        credentials.delete
       end
 
       def store_credentials
@@ -24,7 +44,12 @@ module CloudFiles
           mapping.merge!(key => gets.chomp)
         end
 
-        CloudFiles::Credentials.store(provided_arguments[:alias], attributes)
+        credentials.attributes = attributes
+        credentials.save
+      end
+
+      def credentials
+        @credentials ||= CloudFiles::Credentials.new(provided_arguments[:alias])
       end
 
     end

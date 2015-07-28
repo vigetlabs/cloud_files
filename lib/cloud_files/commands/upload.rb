@@ -16,18 +16,14 @@ module CloudFiles
 
       private
 
-      def options
-        @options ||= {:create => false}
-      end
-
       def create_container?
-        options[:create] == true
+        options.fetch(:create, false)
       end
 
       def parser
         super do |parser|
           parser.on('-c', '--create', "Create container if it doesn't exist") do
-            options[:create] = true
+            options.merge!(:create => true)
           end
         end
       end
